@@ -2,178 +2,200 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>F1 Calendar & Monthly Highlights</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>DPR 2026 Sports Calendar</title>
 
-  <!-- FullCalendar CSS -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css"
-    rel="stylesheet"
-  />
+  <!-- FullCalendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
 
   <style>
     :root{
       --bg: #0b1220;
-      --panel: #121a2b;
-      --panel-2: #18233a;
-      --text: #e7edf9;
-      --muted: #a9b8d6;
-      --line: #263554;
-      --brand-f1: #e10600;
-      --pill: #243556;
-      --pill-text: #cfe0ff;
-      --shadow: 0 8px 30px rgba(0,0,0,.28);
-      --radius: 14px;
+      --panel: #101a30;
+      --panel-2: #152443;
+      --line: #263a66;
+      --text: #eaf1ff;
+      --muted: #9eb4dd;
+      --pill: #213660;
+      --pill-border: #355184;
+      --f1: #e10600;
+      --shadow: 0 10px 30px rgba(0,0,0,.28);
+      --radius: 16px;
     }
 
     * { box-sizing: border-box; }
 
-    body{
+    html, body {
       margin: 0;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: linear-gradient(180deg, #0b1220 0%, #0d1527 100%);
-      color: var(--text);
-      line-height: 1.4;
+      padding: 0;
+      background: #f4f6fa;
+      color: #0f172a;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
     }
 
-    .wrap{
-      width: min(1200px, 92vw);
-      margin: 24px auto 36px;
+    .page {
+      max-width: 1320px;
+      margin: 16px auto;
+      padding: 0 12px;
       display: grid;
-      grid-template-columns: 1.7fr 1fr;
+      grid-template-columns: 1.65fr 1fr;
       gap: 18px;
     }
 
-    .panel{
-      background: var(--panel);
-      border: 1px solid var(--line);
+    .panel {
+      background: var(--bg);
+      border: 1px solid #1f3159;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow: hidden;
     }
 
-    .panel-head{
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+    .panel-header {
+      padding: 16px 18px;
+      border-bottom: 1px solid #24385f;
     }
 
-    .panel-title{
+    .panel-title {
       margin: 0;
-      font-size: 1rem;
-      font-weight: 700;
+      color: var(--text);
+      font-size: 31px;
+      font-weight: 800;
+      line-height: 1.2;
       letter-spacing: .2px;
     }
 
-    .panel-sub{
-      margin: 4px 0 0;
-      color: var(--muted);
-      font-size: .9rem;
+    .panel-subtitle {
+      margin: 8px 0 0;
+      color: #bdd0f5;
+      font-size: 28px;
     }
 
-    #calendarBox{
-      padding: 10px;
+    .calendar-wrap {
+      padding: 12px;
     }
 
-    #calendar{
+    #calendar {
       background: var(--panel-2);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 10px;
+      border: 1px solid #2a4372;
+      border-radius: 14px;
+      padding: 12px;
+      min-height: 520px;
     }
 
     /* FullCalendar tweaks */
-    .fc .fc-toolbar-title{
-      font-size: 1.08rem;
-      font-weight: 700;
+    .fc .fc-toolbar.fc-header-toolbar {
+      margin-bottom: 10px;
+    }
+
+    .fc .fc-toolbar-title {
       color: var(--text);
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: .2px;
     }
 
-    .fc .fc-button{
+    .fc .fc-button {
+      border: 1px solid #36507f !important;
+      background: #21385f !important;
+      color: #f0f6ff !important;
       border-radius: 10px !important;
-      border: 1px solid var(--line) !important;
-      background: #1a2640 !important;
-      color: var(--text) !important;
       box-shadow: none !important;
-      padding: 6px 10px !important;
-      font-weight: 600 !important;
+      font-weight: 700 !important;
+      text-transform: lowercase;
+      padding: 6px 12px !important;
     }
 
-    .fc .fc-button:hover{
-      background: #213156 !important;
+    .fc .fc-button:hover { background: #2a4879 !important; }
+
+    .fc .fc-button:disabled {
+      opacity: .65 !important;
+      cursor: not-allowed !important;
     }
 
-    .fc .fc-button-primary:not(:disabled).fc-button-active{
-      background: #2a3f6e !important;
-    }
-
-    .fc-theme-standard td,
-    .fc-theme-standard th,
-    .fc-theme-standard .fc-scrollgrid{
-      border-color: var(--line) !important;
-    }
-
-    .fc .fc-daygrid-day-number{
-      color: var(--muted);
-      font-weight: 600;
-      font-size: .85rem;
-    }
-
-    .fc .fc-daygrid-event{
-      border-radius: 8px;
-      font-size: .78rem;
-      padding: 2px 4px;
-    }
-
-    .fc .fc-col-header-cell-cushion{
-      color: #c9d7f3;
+    .fc .fc-col-header-cell-cushion {
+      color: #c7d6f4;
+      font-size: 14px;
       font-weight: 700;
-      font-size: .82rem;
+      letter-spacing: .5px;
       text-transform: uppercase;
-      letter-spacing: .4px;
-      padding: 8px 2px;
+      padding: 8px 0;
     }
 
-    /* Right side highlights */
-    #highlightsPanel .panel-head{
-      padding-bottom: 10px;
+    .fc-theme-standard th,
+    .fc-theme-standard td,
+    .fc-theme-standard .fc-scrollgrid {
+      border-color: #2a406d !important;
     }
 
-    #monthTitle{
-      margin: 0;
-      font-size: 1rem;
+    .fc .fc-daygrid-day-number {
+      color: #9fc0f7;
       font-weight: 700;
+      font-size: 17px;
+      padding: 8px;
     }
 
-    #highlights{
-      padding: 12px;
+    .fc .fc-daygrid-event {
+      border-radius: 8px;
+      border-width: 1px;
+      font-size: 14px;
+      padding: 1px 4px;
+    }
+
+    .fc .fc-event-title,
+    .fc .fc-event-time {
+      color: #e8f0ff;
+      font-weight: 600;
+    }
+
+    .tip {
+      margin: 10px 14px 14px;
+      color: #c3d4f6;
+      font-size: 26px;
+    }
+
+    /* Highlights panel */
+    #highlightsPanel .panel-header {
+      padding: 16px 18px;
+    }
+
+    #monthTitle {
+      margin: 0;
+      color: var(--text);
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+
+    #highlights {
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      max-height: calc(100vh - 210px);
+      gap: 12px;
+      min-height: 220px;
+      max-height: 72vh;
       overflow: auto;
     }
 
-    .card{
-      background: #1a2540;
-      border: 1px solid #2a3a5e;
-      border-radius: 12px;
-      padding: 11px 12px;
+    .card {
+      background: #1a2a4d;
+      border: 1px solid #2f487a;
+      border-left: 5px solid #ff2a2a;
+      border-radius: 14px;
+      padding: 12px 14px;
     }
 
-    .card.f1{
-      border-left: 4px solid var(--brand-f1);
+    .card .title {
+      color: #f2f7ff;
+      font-size: 35px;
+      font-weight: 800;
+      margin: 0 0 10px;
+      line-height: 1.25;
     }
 
-    .card .title{
-      font-weight: 700;
-      font-size: .95rem;
-      color: #f4f7ff;
-      margin-bottom: 8px;
-      word-break: break-word;
-    }
-
-    .card .meta{
+    .meta {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
@@ -181,75 +203,78 @@
     }
 
     .pill,
-    .pill-date{
+    .pill-date {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      border: 1px solid #32456d;
       border-radius: 999px;
-      padding: 5px 9px;
-      font-size: .76rem;
-      color: var(--pill-text);
+      padding: 6px 11px;
+      border: 1px solid var(--pill-border);
       background: var(--pill);
+      color: #d7e6ff;
+      font-size: 27px;
       white-space: nowrap;
+      line-height: 1;
     }
 
-    .pill-f1{
-      border-color: #6a2b2b;
-      background: #311b1b;
-      color: #ffd8d8;
+    .pill-f1 {
+      border-color: #7b3131;
+      background: #331b1b;
+      color: #ffd5d5;
     }
 
-    .hint{
-      margin: 10px 12px 14px;
-      color: var(--muted);
-      font-size: .8rem;
+    .footnote {
+      max-width: 1320px;
+      margin: 8px auto 12px;
+      padding: 0 14px;
+      color: #9aa8c3;
+      font-size: 26px;
     }
 
-    .footer-note{
-      width: min(1200px, 92vw);
-      margin: 0 auto 18px;
-      color: #91a3c7;
-      font-size: .78rem;
+    code {
+      background: #eef2ff;
+      border: 1px solid #d6ddf6;
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-size: .92em;
     }
 
-    @media (max-width: 980px){
-      .wrap{
+    @media (max-width: 1050px) {
+      .page {
         grid-template-columns: 1fr;
       }
-
-      #highlights{
+      #highlights {
         max-height: none;
       }
     }
   </style>
 </head>
 <body>
-  <main class="wrap">
-    <!-- Calendar -->
+  <main class="page">
+    <!-- Left: Calendar -->
     <section class="panel">
-      <header class="panel-head">
+      <header class="panel-header">
         <h1 class="panel-title">F1 Event Calendar</h1>
-        <p class="panel-sub">Live from your published Google Sheet CSV (F1_race tab).</p>
+        <p class="panel-subtitle">Live from your published Google Sheet CSV (F1_race tab).</p>
       </header>
 
-      <div id="calendarBox">
+      <div class="calendar-wrap">
         <div id="calendar"></div>
       </div>
 
-      <p class="hint">Tip: switch months to update the highlight cards automatically.</p>
+      <p class="tip">Tip: switch months to update the highlight cards automatically.</p>
     </section>
 
-    <!-- Highlights -->
+    <!-- Right: Monthly highlights -->
     <aside id="highlightsPanel" class="panel">
-      <header class="panel-head">
+      <header class="panel-header">
         <h2 id="monthTitle">Monthly highlights</h2>
       </header>
       <div id="highlights"></div>
     </aside>
   </main>
 
-  <p class="footer-note">
+  <p class="footnote">
     If you update <code>app.js</code>, bump the query version in the script tag to avoid stale cache.
   </p>
 
@@ -257,6 +282,6 @@
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
   <!-- Your app logic -->
-  <script src="./app.js?v=20260215-2"></script>
+  <script src="./app.js?v=20260215-5"></script>
 </body>
 </html>

@@ -21,7 +21,6 @@
       --muted: #9eb4dd;
       --pill: #213660;
       --pill-border: #355184;
-      --f1: #e10600;
       --shadow: 0 10px 26px rgba(0,0,0,.24);
       --radius: 16px;
     }
@@ -65,13 +64,6 @@
       font-weight: 800;
       line-height: 1.2;
       letter-spacing: .2px;
-    }
-
-    .panel-subtitle {
-      margin: 6px 0 0;
-      color: #bdd0f5;
-      font-size: 14px;
-      line-height: 1.35;
     }
 
     .calendar-wrap {
@@ -144,13 +136,6 @@
     .fc .fc-event-time {
       color: #e8f0ff;
       font-weight: 600;
-    }
-
-    .tip {
-      margin: 10px 14px 14px;
-      color: #c3d4f6;
-      font-size: 13px;
-      line-height: 1.35;
     }
 
     /* Highlights panel */
@@ -231,14 +216,11 @@
     <section class="panel">
       <header class="panel-header">
         <h1 class="panel-title">F1 Event Calendar</h1>
-        <p class="panel-subtitle">Live from your published Google Sheet CSV (F1_race tab).</p>
       </header>
 
       <div class="calendar-wrap">
         <div id="calendar"></div>
       </div>
-
-      <p class="tip">Tip: switch months to update the highlight cards automatically.</p>
     </section>
 
     <!-- Right: Monthly highlights -->
@@ -254,6 +236,6 @@
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
   <!-- Your app logic -->
-  <script src="./app.js?v=20260215-6"></script>
+  <script src="./app.js?v=20260215-7"></script>
 </body>
 </html>

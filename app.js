@@ -1,15 +1,14 @@
-/* =========================
-   SIMPLE MULTI-SPORT CONFIG
-   =========================
-   Use direct published CSV URLs for each tab.
-   - If a sport is not ready yet, leave csvUrl as "" and that tab auto-hides.
-   - Different tabs can have different column names.
+/* app.js — DPR 2026 Sports Calendar (multi-tab, Google Sheets published CSV per sport) */
+
+/* ========= CONFIG =========
+   Put your published CSV URL for each sport tab.
+   If a URL is blank, that tab is hidden automatically.
 */
 const SPORT_SHEETS = [
   {
     key: "f1",
     label: "F1",
-    csvUrl: "", // <-- paste F1_race CSV URL here
+    csvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSTuRExRSKpKiorPUADig1yYm5_ye3jLG-5TcQ4Uhz07qgx-1mIkkhtEsFky9FpRd0QczIl2xEBYEd8/pub?output=csv&gid=0",
     columns: {
       title: ["title", "event", "race", "name"],
       start: ["start", "start_date", "date", "start time", "start_datetime", "datetime"],
@@ -17,72 +16,12 @@ const SPORT_SHEETS = [
       location: ["location", "venue", "country", "city"]
     }
   },
-  {
-    key: "nascar",
-    label: "NASCAR",
-    csvUrl: "", // <-- paste NASCAR tab CSV URL here
-    columns: {
-      title: ["title", "event", "race", "name", "matchup"],
-      start: ["start", "date", "start_date", "datetime", "kickoff"],
-      end:   ["end", "end_date", "end_datetime"],
-      location: ["location", "venue", "track", "city"]
-    }
-  },
-  {
-    key: "nfl",
-    label: "NFL",
-    csvUrl: "",
-    columns: {
-      title: ["title", "event", "game", "matchup", "name"],
-      start: ["start", "date", "kickoff", "start_date", "datetime"],
-      end:   ["end", "end_date", "end_datetime"],
-      location: ["location", "venue", "stadium", "city"]
-    }
-  },
-  {
-    key: "nhl",
-    label: "NHL",
-    csvUrl: "",
-    columns: {
-      title: ["title", "event", "game", "matchup", "name"],
-      start: ["start", "date", "puck drop", "start_date", "datetime"],
-      end:   ["end", "end_date", "end_datetime"],
-      location: ["location", "venue", "arena", "city"]
-    }
-  },
-  {
-    key: "nba",
-    label: "NBA",
-    csvUrl: "",
-    columns: {
-      title: ["title", "event", "game", "matchup", "name"],
-      start: ["start", "date", "tipoff", "start_date", "datetime"],
-      end:   ["end", "end_date", "end_datetime"],
-      location: ["location", "venue", "arena", "city"]
-    }
-  },
-  {
-    key: "mlb",
-    label: "MLB",
-    csvUrl: "",
-    columns: {
-      title: ["title", "event", "game", "matchup", "name"],
-      start: ["start", "date", "first pitch", "start_date", "datetime"],
-      end:   ["end", "end_date", "end_datetime"],
-      location: ["location", "venue", "ballpark", "city"]
-    }
-  },
-  {
-    key: "other",
-    label: "Other",
-    csvUrl: "",
-    columns: {
-      title: ["title", "event", "name"],
-      start: ["start", "date", "start_date", "datetime"],
-      end:   ["end", "end_date", "end_datetime"],
-      location: ["location", "venue", "city"]
-    }
-  }
+  { key: "nascar", label: "NASCAR", csvUrl: "", columns: { title:["title","event","race","name","matchup"], start:["start","date","start_date","datetime","kickoff"], end:["end","end_date","end_datetime"], location:["location","venue","track","city"] } },
+  { key: "nfl",    label: "NFL",    csvUrl: "", columns: { title:["title","event","game","matchup","name"], start:["start","date","kickoff","start_date","datetime"], end:["end","end_date","end_datetime"], location:["location","venue","stadium","city"] } },
+  { key: "nhl",    label: "NHL",    csvUrl: "", columns: { title:["title","event","game","matchup","name"], start:["start","date","puck drop","start_date","datetime"], end:["end","end_date","end_datetime"], location:["location","venue","arena","city"] } },
+  { key: "nba",    label: "NBA",    csvUrl: "", columns: { title:["title","event","game","matchup","name"], start:["start","date","tipoff","start_date","datetime"], end:["end","end_date","end_datetime"], location:["location","venue","arena","city"] } },
+  { key: "mlb",    label: "MLB",    csvUrl: "", columns: { title:["title","event","game","matchup","name"], start:["start","date","first pitch","start_date","datetime"], end:["end","end_date","end_datetime"], location:["location","venue","ballpark","city"] } },
+  { key: "other",  label: "Other",  csvUrl: "", columns: { title:["title","event","name"], start:["start","date","start_date","datetime"], end:["end","end_date","end_datetime"], location:["location","venue","city"] } }
 ];
 
 const SPORT_ORDER = ["f1", "nascar", "nfl", "nhl", "nba", "mlb", "other"];
@@ -90,25 +29,19 @@ const SPORT_LABELS = {
   f1: "F1", nascar: "NASCAR", nfl: "NFL", nhl: "NHL", nba: "NBA", mlb: "MLB", other: "Other"
 };
 
-/* =========================
-   DOM
-   ========================= */
+/* ========= DOM ========= */
 const HIGHLIGHTS = document.getElementById("highlights");
 const MONTH_TITLE = document.getElementById("monthTitle");
 const APP_TITLE = document.getElementById("appTitle");
 const SPORT_TABS = document.getElementById("sportTabs");
 
-/* =========================
-   STATE
-   ========================= */
+/* ========= STATE ========= */
 let allEvents = [];
 let groupedBySport = {};
 let selectedSport = "f1";
 let calendar = null;
 
-/* =========================
-   HELPERS
-   ========================= */
+/* ========= HELPERS ========= */
 function normalizeKey(s) {
   return (s || "")
     .normalize("NFD")
@@ -133,6 +66,7 @@ function formatRange(start, end) {
   const sTxt = s.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   const eTxt = e.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   const yTxt = s.toLocaleDateString(undefined, { year: "numeric" });
+
   if (sameDay) return `${sTxt}, ${yTxt}`;
   if (sameMonthYear) return `${sTxt}–${e.getDate()}, ${yTxt}`;
   return `${sTxt} – ${eTxt}, ${yTxt}`;
@@ -143,20 +77,25 @@ function parseDateFlexible(v) {
   const raw = String(v).trim();
   if (!raw) return null;
 
+  // ISO / RFC
   const d1 = new Date(raw);
   if (!Number.isNaN(d1.getTime())) return d1;
 
+  // DD/MM/YYYY, MM/DD/YYYY (+ optional HH:mm)
   const m = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?$/);
   if (m) {
     let a = parseInt(m[1], 10), b = parseInt(m[2], 10), y = parseInt(m[3], 10);
     if (y < 100) y += 2000;
     const hh = m[4] ? parseInt(m[4], 10) : 0;
     const mm = m[5] ? parseInt(m[5], 10) : 0;
+
     let month = a, day = b;
-    if (a > 12) { day = a; month = b; }
+    if (a > 12) { day = a; month = b; } // interpret as DD/MM
+
     const d2 = new Date(y, month - 1, day, hh, mm);
     if (!Number.isNaN(d2.getTime())) return d2;
   }
+
   return null;
 }
 
@@ -169,24 +108,59 @@ function parseCSV(text) {
 
   while (i < text.length) {
     const ch = text[i];
+
     if (inQuotes) {
       if (ch === '"') {
-        if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
-        inQuotes = false; i++; continue;
+        if (text[i + 1] === '"') {
+          field += '"';
+          i += 2;
+          continue;
+        }
+        inQuotes = false;
+        i++;
+        continue;
       }
-      field += ch; i++; continue;
+      field += ch;
+      i++;
+      continue;
     }
-    if (ch === '"') { inQuotes = true; i++; continue; }
-    if (ch === ",") { row.push(field); field = ""; i++; continue; }
-    if (ch === "\n") { row.push(field); rows.push(row); row = []; field = ""; i++; continue; }
-    if (ch === "\r") { i++; continue; }
-    field += ch; i++;
+
+    if (ch === '"') {
+      inQuotes = true;
+      i++;
+      continue;
+    }
+    if (ch === ",") {
+      row.push(field);
+      field = "";
+      i++;
+      continue;
+    }
+    if (ch === "\n") {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+      i++;
+      continue;
+    }
+    if (ch === "\r") {
+      i++;
+      continue;
+    }
+
+    field += ch;
+    i++;
   }
-  if (field.length || row.length) { row.push(field); rows.push(row); }
+
+  if (field.length || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
 
   if (!rows.length) return [];
-  const headers = rows[0].map((h) => String(h || "").trim());
 
+  const headers = rows[0].map((h) => String(h || "").trim());
   return rows.slice(1)
     .filter((r) => r.some((x) => String(x ?? "").trim() !== ""))
     .map((r) => {
@@ -207,9 +181,7 @@ function findColumnKey(record, aliases) {
   return null;
 }
 
-/* =========================
-   F1 grouping
-   ========================= */
+/* ========= GROUPING ========= */
 function getSessionKind(title) {
   const t = normalizeKey(title);
   if (t.includes("sprint qualification") || t.includes("sprint qualifying")) return "sprint qualifying";
@@ -220,9 +192,12 @@ function getSessionKind(title) {
   if (t.includes("practice") || /\bfp\s*\d+\b/.test(t)) return "practice";
   return "other";
 }
+
 function canonicalF1Name(location, title) {
   const loc = normalizeKey(location);
   const t = normalizeKey(title);
+
+  if (!title) return null;
   if (t.includes("in your calendar")) return null;
   if (t.includes("testing")) return "Testing";
 
@@ -248,8 +223,10 @@ function canonicalF1Name(location, title) {
     const m = cleaned.match(/([A-Za-zÀ-ÿ'’\-\s]+)\s+grand\s+prix/i);
     if (m?.[1]) return `${m[1].trim()} Grand Prix`;
   }
+
   return title || "F1 Event";
 }
+
 function genericSeriesName(e) {
   const t = (e.title || "").replace(/[🏎🏁⏱️🏈🏒🏀⚾]/g, "").trim();
   return t || `${prettySport(e.sportKey)} Event`;
@@ -259,22 +236,34 @@ function buildGroupedHighlights(events) {
   const bySport = {};
   for (const k of SPORT_ORDER) bySport[k] = [];
 
-  const f1Rows = events.filter((e) => e.sportKey === "f1").map((e) => ({
-    ...e,
-    _name: canonicalF1Name(e.location, e.title),
-    _key: normalizeKey(canonicalF1Name(e.location, e.title)),
-    _day: startOfDay(e.start),
-    _kind: getSessionKind(e.title)
-  }))
-  .filter((x) => x._name && !Number.isNaN(x._day.getTime()))
-  .sort((a,b) => (a._key < b._key ? -1 : a._key > b._key ? 1 : a._day - b._day));
+  // F1: group sessions into one race weekend card
+  const f1Rows = events
+    .filter((e) => e.sportKey === "f1")
+    .map((e) => ({
+      ...e,
+      _name: canonicalF1Name(e.location, e.title),
+      _key: normalizeKey(canonicalF1Name(e.location, e.title)),
+      _day: startOfDay(e.start),
+      _kind: getSessionKind(e.title)
+    }))
+    .filter((x) => x._name && !Number.isNaN(x._day.getTime()))
+    .sort((a, b) => (a._key < b._key ? -1 : a._key > b._key ? 1 : a._day - b._day));
 
   const GAP_DAYS = 10;
   const f1Groups = [];
   let g = null;
+
   const newGroup = (r) => ({
-    sportKey: "f1", title: r._name, start: r._day, end: r._day, items: [], _key: r._key,
-    _hasRace:false, _hasQuali:false, _hasSprint:false, _dedupe:new Set()
+    sportKey: "f1",
+    title: r._name,
+    start: r._day,
+    end: r._day,
+    items: [],
+    _key: r._key,
+    _hasRace: false,
+    _hasQuali: false,
+    _hasSprint: false,
+    _dedupe: new Set()
   });
 
   for (const r of f1Rows) {
@@ -282,8 +271,12 @@ function buildGroupedHighlights(events) {
     else {
       const last = g.items[g.items.length - 1];
       const gap = (r._day - startOfDay(last.start)) / 86400000;
-      if (g._key !== r._key || gap > GAP_DAYS) { f1Groups.push(g); g = newGroup(r); }
+      if (g._key !== r._key || gap > GAP_DAYS) {
+        f1Groups.push(g);
+        g = newGroup(r);
+      }
     }
+
     const dedupe = `${r._day.toISOString().slice(0,10)}|${r._kind}|${normalizeKey(r.title)}`;
     if (g._dedupe.has(dedupe)) continue;
     g._dedupe.add(dedupe);
@@ -297,41 +290,57 @@ function buildGroupedHighlights(events) {
   }
   if (g) f1Groups.push(g);
 
-  bySport.f1 = f1Groups.map((x) => {
-    const raceDates = x.items.filter((i) => getSessionKind(i.title) === "race").map((i) => startOfDay(i.start)).sort((a,b) => a-b);
-    const anchor = raceDates.length ? raceDates[0] : x.start;
-    return {
-      sportKey: "f1",
-      title: x.title,
-      start: x.start,
-      end: x.end,
-      anchorDate: anchor,
-      primaryMonth: monthKeyFromDate(anchor),
-      flags: [x._hasRace ? "Race" : null, x._hasQuali ? "Quali" : null, x._hasSprint ? "Sprint" : null].filter(Boolean)
-    };
-  }).sort((a,b) => a.anchorDate - b.anchorDate);
+  bySport.f1 = f1Groups
+    .map((x) => {
+      const raceDates = x.items
+        .filter((i) => getSessionKind(i.title) === "race")
+        .map((i) => startOfDay(i.start))
+        .sort((a, b) => a - b);
+      const anchor = raceDates.length ? raceDates[0] : x.start;
 
-  // Other sports grouping
+      return {
+        sportKey: "f1",
+        title: x.title,
+        start: x.start,
+        end: x.end,
+        anchorDate: anchor,
+        primaryMonth: monthKeyFromDate(anchor),
+        flags: [
+          x._hasRace ? "Race" : null,
+          x._hasQuali ? "Quali" : null,
+          x._hasSprint ? "Sprint" : null
+        ].filter(Boolean)
+      };
+    })
+    .sort((a, b) => a.anchorDate - b.anchorDate);
+
+  // Other sports: generic grouping by similar name + proximity
   const others = events.filter((e) => e.sportKey !== "f1");
   const by = {};
   for (const e of others) {
     if (!by[e.sportKey]) by[e.sportKey] = [];
-    by[e.sportKey].push({ ...e, _name: genericSeriesName(e), _key: normalizeKey(genericSeriesName(e)), _day: startOfDay(e.start) });
+    by[e.sportKey].push({
+      ...e,
+      _name: genericSeriesName(e),
+      _key: normalizeKey(genericSeriesName(e)),
+      _day: startOfDay(e.start)
+    });
   }
 
   for (const [sport, arr] of Object.entries(by)) {
-    arr.sort((a,b) => (a._key < b._key ? -1 : a._key > b._key ? 1 : a._day - b._day));
+    arr.sort((a, b) => (a._key < b._key ? -1 : a._key > b._key ? 1 : a._day - b._day));
+
     const groups = [];
     let cg = null;
-
     for (const r of arr) {
-      if (!cg) cg = { sportKey:sport, title:r._name, start:r._day, end:r._day, items:[r], _key:r._key };
-      else {
+      if (!cg) {
+        cg = { sportKey: sport, title: r._name, start: r._day, end: r._day, items: [r], _key: r._key };
+      } else {
         const last = cg.items[cg.items.length - 1];
         const gap = (r._day - startOfDay(last.start)) / 86400000;
         if (cg._key !== r._key || gap > 14) {
           groups.push(cg);
-          cg = { sportKey:sport, title:r._name, start:r._day, end:r._day, items:[r], _key:r._key };
+          cg = { sportKey: sport, title: r._name, start: r._day, end: r._day, items: [r], _key: r._key };
         } else {
           cg.items.push(r);
           if (r._day < cg.start) cg.start = r._day;
@@ -341,18 +350,23 @@ function buildGroupedHighlights(events) {
     }
     if (cg) groups.push(cg);
 
-    bySport[sport] = groups.map((x) => ({
-      sportKey: sport, title: x.title, start: x.start, end: x.end,
-      anchorDate: x.start, primaryMonth: monthKeyFromDate(x.start), flags: []
-    })).sort((a,b) => a.anchorDate - b.anchorDate);
+    bySport[sport] = groups
+      .map((x) => ({
+        sportKey: sport,
+        title: x.title,
+        start: x.start,
+        end: x.end,
+        anchorDate: x.start,
+        primaryMonth: monthKeyFromDate(x.start),
+        flags: []
+      }))
+      .sort((a, b) => a.anchorDate - b.anchorDate);
   }
 
   return bySport;
 }
 
-/* =========================
-   DATA LOAD
-   ========================= */
+/* ========= LOADER ========= */
 async function fetchSportSheet(cfg) {
   if (!cfg.csvUrl) return [];
 
@@ -382,7 +396,6 @@ async function fetchSportSheet(cfg) {
     const location = locationKey ? String(r[locationKey] || "").trim() : "";
 
     if (!title || !startRaw) continue;
-
     const sDate = parseDateFlexible(startRaw);
     if (!sDate) continue;
     const eDate = endRaw ? parseDateFlexible(endRaw) : null;
@@ -402,24 +415,29 @@ async function fetchSportSheet(cfg) {
 }
 
 async function loadAllSports() {
-  const batches = await Promise.all(SPORT_SHEETS.map(async (cfg) => {
-    try { return await fetchSportSheet(cfg); }
-    catch (err) { console.error(`${cfg.label} load error:`, err); return []; }
-  }));
+  const batches = await Promise.all(
+    SPORT_SHEETS.map(async (cfg) => {
+      try {
+        return await fetchSportSheet(cfg);
+      } catch (err) {
+        console.error(`${cfg.label} load error:`, err);
+        return [];
+      }
+    })
+  );
   return batches.flat();
 }
 
-/* =========================
-   UI
-   ========================= */
+/* ========= UI ========= */
 function buildSportTabs() {
   SPORT_TABS.innerHTML = "";
 
-  const available = SPORT_ORDER.filter((k) => (groupedBySport[k] || []).length > 0);
-
-  // show all only if you want; here we show only tabs that have config URL or data
-  const configured = SPORT_SHEETS.filter(s => !!s.csvUrl).map(s => s.key);
-  const tabsToShow = SPORT_ORDER.filter(k => configured.includes(k) || (groupedBySport[k] || []).length > 0);
+  const tabsToShow = SPORT_ORDER.filter((k) => {
+    const cfg = SPORT_SHEETS.find((s) => s.key === k);
+    const hasUrl = !!cfg?.csvUrl;
+    const hasData = (groupedBySport[k] || []).length > 0;
+    return hasUrl || hasData;
+  });
 
   for (const key of tabsToShow) {
     const btn = document.createElement("button");
@@ -439,11 +457,11 @@ function buildSportTabs() {
   }
 
   if (!(groupedBySport[selectedSport] || []).length) {
-    const first = available[0] || tabsToShow[0] || "f1";
-    selectedSport = first;
-    APP_TITLE.textContent = `${prettySport(first)} Event Calendar`;
+    const firstWithData = tabsToShow.find((k) => (groupedBySport[k] || []).length > 0) || tabsToShow[0] || "f1";
+    selectedSport = firstWithData;
+    APP_TITLE.textContent = `${prettySport(firstWithData)} Event Calendar`;
     [...SPORT_TABS.children].forEach((x) => {
-      x.classList.toggle("active", normalizeKey(x.textContent) === normalizeKey(prettySport(first)));
+      x.classList.toggle("active", normalizeKey(x.textContent) === normalizeKey(prettySport(firstWithData)));
     });
   }
 }
@@ -487,8 +505,14 @@ function rerenderCalendar() {
   calendar.removeAllEvents();
   calendar.addEventSource(
     getEventsForSelectedSport().map((e) => ({
-      title: e.title, start: e.start, end: e.end || null,
-      extendedProps: { sportKey: e.sportKey, location: e.location, source: e.source }
+      title: e.title,
+      start: e.start,
+      end: e.end || null,
+      extendedProps: {
+        sportKey: e.sportKey,
+        location: e.location,
+        source: e.source
+      }
     }))
   );
   renderHighlights(calendar.view.currentStart);
@@ -504,17 +528,30 @@ function initCalendar() {
     fixedWeekCount: false,
 
     events: getEventsForSelectedSport().map((e) => ({
-      title: e.title, start: e.start, end: e.end || null,
-      extendedProps: { sportKey: e.sportKey, location: e.location, source: e.source }
+      title: e.title,
+      start: e.start,
+      end: e.end || null,
+      extendedProps: {
+        sportKey: e.sportKey,
+        location: e.location,
+        source: e.source
+      }
     })),
 
-    datesSet(info) { renderHighlights(info.view.currentStart); },
+    datesSet(info) {
+      renderHighlights(info.view.currentStart);
+    },
 
     eventDidMount(info) {
       const s = info.event.extendedProps?.sportKey;
       const border = {
-        f1:"#e10600", nascar:"#ffd54a", nfl:"#44c0ff",
-        nhl:"#8ee08e", nba:"#ff9a5a", mlb:"#c6a6ff", other:"#7aa2ff"
+        f1: "#e10600",
+        nascar: "#ffd54a",
+        nfl: "#44c0ff",
+        nhl: "#8ee08e",
+        nba: "#ff9a5a",
+        mlb: "#c6a6ff",
+        other: "#7aa2ff"
       }[s] || "#7aa2ff";
       info.el.style.borderColor = border;
     }
@@ -523,13 +560,12 @@ function initCalendar() {
   calendar.render();
 }
 
-/* =========================
-   BOOT
-   ========================= */
+/* ========= BOOT ========= */
 (async function boot() {
   try {
     allEvents = await loadAllSports();
     groupedBySport = buildGroupedHighlights(allEvents);
+
     APP_TITLE.textContent = `${prettySport(selectedSport)} Event Calendar`;
     buildSportTabs();
     initCalendar();

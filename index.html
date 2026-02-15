@@ -22,7 +22,7 @@
       --pill: #213660;
       --pill-border: #355184;
       --f1: #e10600;
-      --shadow: 0 10px 30px rgba(0,0,0,.28);
+      --shadow: 0 10px 26px rgba(0,0,0,.24);
       --radius: 16px;
     }
 
@@ -54,23 +54,24 @@
     }
 
     .panel-header {
-      padding: 16px 18px;
+      padding: 14px 16px;
       border-bottom: 1px solid #24385f;
     }
 
     .panel-title {
       margin: 0;
       color: var(--text);
-      font-size: 31px;
+      font-size: 36px;
       font-weight: 800;
       line-height: 1.2;
       letter-spacing: .2px;
     }
 
     .panel-subtitle {
-      margin: 8px 0 0;
+      margin: 6px 0 0;
       color: #bdd0f5;
-      font-size: 28px;
+      font-size: 14px;
+      line-height: 1.35;
     }
 
     .calendar-wrap {
@@ -86,13 +87,11 @@
     }
 
     /* FullCalendar tweaks */
-    .fc .fc-toolbar.fc-header-toolbar {
-      margin-bottom: 10px;
-    }
+    .fc .fc-toolbar.fc-header-toolbar { margin-bottom: 10px; }
 
     .fc .fc-toolbar-title {
       color: var(--text);
-      font-size: 42px;
+      font-size: 24px;
       font-weight: 800;
       letter-spacing: .2px;
     }
@@ -105,21 +104,18 @@
       box-shadow: none !important;
       font-weight: 700 !important;
       text-transform: lowercase;
-      padding: 6px 12px !important;
+      padding: 6px 11px !important;
+      font-size: 12px !important;
     }
 
     .fc .fc-button:hover { background: #2a4879 !important; }
-
-    .fc .fc-button:disabled {
-      opacity: .65 !important;
-      cursor: not-allowed !important;
-    }
+    .fc .fc-button:disabled { opacity: .65 !important; cursor: not-allowed !important; }
 
     .fc .fc-col-header-cell-cushion {
       color: #c7d6f4;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 700;
-      letter-spacing: .5px;
+      letter-spacing: .4px;
       text-transform: uppercase;
       padding: 8px 0;
     }
@@ -133,14 +129,14 @@
     .fc .fc-daygrid-day-number {
       color: #9fc0f7;
       font-weight: 700;
-      font-size: 17px;
-      padding: 8px;
+      font-size: 14px;
+      padding: 6px 8px;
     }
 
     .fc .fc-daygrid-event {
       border-radius: 8px;
       border-width: 1px;
-      font-size: 14px;
+      font-size: 12px;
       padding: 1px 4px;
     }
 
@@ -153,24 +149,24 @@
     .tip {
       margin: 10px 14px 14px;
       color: #c3d4f6;
-      font-size: 26px;
+      font-size: 13px;
+      line-height: 1.35;
     }
 
     /* Highlights panel */
-    #highlightsPanel .panel-header {
-      padding: 16px 18px;
-    }
+    #highlightsPanel .panel-header { padding: 14px 16px; }
 
     #monthTitle {
       margin: 0;
       color: var(--text);
-      font-size: 40px;
+      font-size: 22px;
       font-weight: 800;
+      line-height: 1.25;
       letter-spacing: .2px;
     }
 
     #highlights {
-      padding: 14px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -184,14 +180,14 @@
       border: 1px solid #2f487a;
       border-left: 5px solid #ff2a2a;
       border-radius: 14px;
-      padding: 12px 14px;
+      padding: 11px 12px;
     }
 
     .card .title {
       color: #f2f7ff;
-      font-size: 35px;
+      font-size: 20px;
       font-weight: 800;
-      margin: 0 0 10px;
+      margin: 0 0 9px;
       line-height: 1.25;
     }
 
@@ -208,11 +204,11 @@
       align-items: center;
       gap: 6px;
       border-radius: 999px;
-      padding: 6px 11px;
+      padding: 6px 10px;
       border: 1px solid var(--pill-border);
       background: var(--pill);
       color: #d7e6ff;
-      font-size: 27px;
+      font-size: 13px;
       white-space: nowrap;
       line-height: 1;
     }
@@ -223,29 +219,9 @@
       color: #ffd5d5;
     }
 
-    .footnote {
-      max-width: 1320px;
-      margin: 8px auto 12px;
-      padding: 0 14px;
-      color: #9aa8c3;
-      font-size: 26px;
-    }
-
-    code {
-      background: #eef2ff;
-      border: 1px solid #d6ddf6;
-      border-radius: 6px;
-      padding: 1px 6px;
-      font-size: .92em;
-    }
-
     @media (max-width: 1050px) {
-      .page {
-        grid-template-columns: 1fr;
-      }
-      #highlights {
-        max-height: none;
-      }
+      .page { grid-template-columns: 1fr; }
+      #highlights { max-height: none; }
     }
   </style>
 </head>
@@ -274,14 +250,10 @@
     </aside>
   </main>
 
-  <p class="footnote">
-    If you update <code>app.js</code>, bump the query version in the script tag to avoid stale cache.
-  </p>
-
   <!-- FullCalendar JS -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
   <!-- Your app logic -->
-  <script src="./app.js?v=20260215-5"></script>
+  <script src="./app.js?v=20260215-6"></script>
 </body>
 </html>

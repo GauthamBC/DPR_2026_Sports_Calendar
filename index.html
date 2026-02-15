@@ -1,229 +1,258 @@
+<!-- index.html -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <title>DPR 2026 Sports Calendar</title>
+  <title>DPR Sports Calendar</title>
 
-  <!-- FullCalendar -->
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" />
 
   <style>
     :root{
-      --bg: #0b1220;
-      --panel: #101a30;
-      --panel-2: #152443;
-      --line: #263a66;
-      --text: #eaf1ff;
-      --muted: #9eb4dd;
-      --pill: #213660;
-      --pill-border: #355184;
-      --shadow: 0 10px 26px rgba(0,0,0,.24);
-      --radius: 16px;
+      --bg:#08132a;
+      --panel:#0d1d3a;
+      --panel2:#13264a;
+      --line:#2a4578;
+      --text:#eaf1ff;
+      --pill:#233d6a;
+      --pillBorder:#36578f;
+      --accent:#ff2b2b;
+      --shadow:0 10px 24px rgba(0,0,0,.22);
+      --radius:14px;
     }
 
     * { box-sizing: border-box; }
-
     html, body {
       margin: 0;
       padding: 0;
-      background: #f4f6fa;
-      color: #0f172a;
+      background: #f3f5fa;
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
     }
 
-    .page {
-      max-width: 1320px;
+    .page{
+      max-width: 1280px;
       margin: 16px auto;
       padding: 0 12px;
       display: grid;
       grid-template-columns: 1.65fr 1fr;
-      gap: 18px;
+      gap: 16px;
+      align-items: start;
     }
 
-    .panel {
+    .panel{
       background: var(--bg);
-      border: 1px solid #1f3159;
+      border: 1px solid #1f3764;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow: hidden;
     }
 
-    .panel-header {
-      padding: 14px 16px;
-      border-bottom: 1px solid #24385f;
+    .panel-header{
+      padding: 12px 14px;
+      border-bottom: 1px solid #203a68;
     }
 
-    .panel-title {
+    .panel-title{
       margin: 0;
       color: var(--text);
-      font-size: 36px;
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 900;
+      letter-spacing: .1px;
+    }
+
+    .sport-tabs-wrap{
+      padding: 10px 12px;
+      border-bottom: 1px solid #203a68;
+      background: #0b1833;
+    }
+
+    .sport-tabs{
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .sport-tab{
+      border: 1px solid #37588f;
+      background: #1f3764;
+      color: #eaf1ff;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 16px;
       font-weight: 800;
-      line-height: 1.2;
-      letter-spacing: .2px;
+      line-height: 1;
+      cursor: pointer;
+      user-select: none;
+    }
+    .sport-tab:hover{ background:#274779; }
+    .sport-tab.active{
+      background:#e10600;
+      border-color:#ff5a5a;
+      color:#fff;
+      box-shadow: 0 0 0 2px rgba(255,90,90,.18) inset;
     }
 
-    .calendar-wrap {
-      padding: 12px;
-    }
+    .calendar-wrap{ padding:12px; }
 
-    #calendar {
-      background: var(--panel-2);
-      border: 1px solid #2a4372;
-      border-radius: 14px;
-      padding: 12px;
+    #calendar{
+      background: var(--panel2);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
       min-height: 520px;
     }
 
-    /* FullCalendar tweaks */
-    .fc .fc-toolbar.fc-header-toolbar { margin-bottom: 10px; }
+    .fc .fc-toolbar.fc-header-toolbar{ margin-bottom: 10px; }
 
-    .fc .fc-toolbar-title {
+    .fc .fc-toolbar-title{
       color: var(--text);
-      font-size: 24px;
-      font-weight: 800;
-      letter-spacing: .2px;
+      font-size: 44px;
+      font-weight: 900;
+      letter-spacing: .15px;
     }
 
-    .fc .fc-button {
-      border: 1px solid #36507f !important;
-      background: #21385f !important;
-      color: #f0f6ff !important;
+    .fc .fc-button{
+      border: 1px solid #36578f !important;
+      background: #1f3764 !important;
+      color: #eef5ff !important;
       border-radius: 10px !important;
       box-shadow: none !important;
-      font-weight: 700 !important;
-      text-transform: lowercase;
-      padding: 6px 11px !important;
-      font-size: 12px !important;
+      font-weight: 800 !important;
+      text-transform: lowercase !important;
+      font-size: 18px !important;
+      padding: 6px 12px !important;
     }
-
-    .fc .fc-button:hover { background: #2a4879 !important; }
-    .fc .fc-button:disabled { opacity: .65 !important; cursor: not-allowed !important; }
-
-    .fc .fc-col-header-cell-cushion {
-      color: #c7d6f4;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: .4px;
-      text-transform: uppercase;
-      padding: 8px 0;
-    }
+    .fc .fc-button:hover{ background:#2a4a7d !important; }
+    .fc .fc-button:disabled{ opacity:.65 !important; }
 
     .fc-theme-standard th,
     .fc-theme-standard td,
-    .fc-theme-standard .fc-scrollgrid {
-      border-color: #2a406d !important;
+    .fc-theme-standard .fc-scrollgrid{
+      border-color:#2a4475 !important;
     }
 
-    .fc .fc-daygrid-day-number {
-      color: #9fc0f7;
-      font-weight: 700;
+    .fc .fc-col-header-cell-cushion{
+      color:#c8d6f3;
       font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      font-weight: 800;
+      padding: 8px 0;
+    }
+
+    .fc .fc-daygrid-day-number{
+      color:#9fc0f7;
+      font-size: 16px;
+      font-weight: 800;
       padding: 6px 8px;
     }
 
-    .fc .fc-daygrid-event {
+    .fc .fc-daygrid-event{
       border-radius: 8px;
       border-width: 1px;
       font-size: 12px;
       padding: 1px 4px;
     }
-
-    .fc .fc-event-title,
-    .fc .fc-event-time {
-      color: #e8f0ff;
-      font-weight: 600;
+    .fc .fc-event-title,.fc .fc-event-time{
+      color:#eaf1ff;
+      font-weight: 700;
     }
 
-    /* Highlights panel */
-    #highlightsPanel .panel-header { padding: 14px 16px; }
+    #highlightsPanel .panel-header{ padding:12px 14px; }
 
-    #monthTitle {
+    #monthTitle{
       margin: 0;
       color: var(--text);
-      font-size: 22px;
-      font-weight: 800;
-      line-height: 1.25;
-      letter-spacing: .2px;
+      font-size: 38px;
+      line-height: 1.12;
+      font-weight: 900;
+      letter-spacing: .15px;
     }
 
-    #highlights {
+    #highlights{
       padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       min-height: 220px;
       max-height: 72vh;
       overflow: auto;
     }
 
-    .card {
-      background: #1a2a4d;
-      border: 1px solid #2f487a;
-      border-left: 5px solid #ff2a2a;
-      border-radius: 14px;
+    .card{
+      background:#1a2e57;
+      border:1px solid #33558d;
+      border-left:6px solid var(--accent);
+      border-radius:13px;
       padding: 11px 12px;
     }
 
-    .card .title {
-      color: #f2f7ff;
-      font-size: 20px;
-      font-weight: 800;
-      margin: 0 0 9px;
-      line-height: 1.25;
+    .card .title{
+      margin:0 0 8px;
+      color:#f2f7ff;
+      font-size: 18px;
+      line-height:1.2;
+      font-weight: 900;
+      letter-spacing:.1px;
     }
 
-    .meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
+    .meta{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
     }
 
-    .pill,
-    .pill-date {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border-radius: 999px;
-      padding: 6px 10px;
-      border: 1px solid var(--pill-border);
-      background: var(--pill);
-      color: #d7e6ff;
-      font-size: 13px;
-      white-space: nowrap;
-      line-height: 1;
+    .pill,.pill-date{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      white-space:nowrap;
+      border-radius:999px;
+      font-size:14px;
+      line-height:1;
+      padding:7px 11px;
     }
 
-    .pill-f1 {
-      border-color: #7b3131;
-      background: #331b1b;
-      color: #ffd5d5;
+    .pill{
+      border:1px solid var(--pillBorder);
+      background:var(--pill);
+      color:#dce8ff;
     }
 
-    @media (max-width: 1050px) {
-      .page { grid-template-columns: 1fr; }
-      #highlights { max-height: none; }
+    .pill-date{
+      border:1px solid #7b3131;
+      background:#331b1b;
+      color:#ffd7d7;
+    }
+
+    @media (max-width:1080px){
+      .page{ grid-template-columns:1fr; }
+      #highlights{ max-height:none; }
+      .panel-title{ font-size:24px; }
+      #monthTitle{ font-size:28px; }
+      .fc .fc-toolbar-title{ font-size:30px; }
     }
   </style>
 </head>
 <body>
   <main class="page">
-    <!-- Left: Calendar -->
     <section class="panel">
       <header class="panel-header">
-        <h1 class="panel-title">F1 Event Calendar</h1>
+        <h1 id="appTitle" class="panel-title">F1 Event Calendar</h1>
       </header>
+
+      <div class="sport-tabs-wrap">
+        <div id="sportTabs" class="sport-tabs"></div>
+      </div>
 
       <div class="calendar-wrap">
         <div id="calendar"></div>
       </div>
     </section>
 
-    <!-- Right: Monthly highlights -->
     <aside id="highlightsPanel" class="panel">
       <header class="panel-header">
         <h2 id="monthTitle">Monthly highlights</h2>
@@ -232,10 +261,7 @@
     </aside>
   </main>
 
-  <!-- FullCalendar JS -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-
-  <!-- Your app logic -->
-  <script src="./app.js?v=20260215-7"></script>
+  <script src="./app.js?v=20260216-2"></script>
 </body>
 </html>

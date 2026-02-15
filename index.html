@@ -6,13 +6,9 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-
   <title>DPR 2026 Sports Calendar</title>
 
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css"
-  />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" />
 
   <style>
     :root{
@@ -21,7 +17,6 @@
       --panel2:#13264a;
       --line:#2a4578;
       --text:#eaf1ff;
-      --muted:#b8c9ef;
       --pill:#233d6a;
       --pillBorder:#36578f;
       --accent:#ff2b2b;
@@ -65,13 +60,12 @@
     .panel-title {
       margin: 0;
       color: var(--text);
-      font-size: 26px;
-      line-height: 1.2;
-      font-weight: 800;
-      letter-spacing: .2px;
+      font-size: 46px;
+      line-height: 1.08;
+      font-weight: 900;
+      letter-spacing: .1px;
     }
 
-    /* top sport tabs */
     .sport-tabs-wrap {
       padding: 10px 12px;
       border-bottom: 1px solid #203a68;
@@ -89,9 +83,9 @@
       background: #1f3764;
       color: #eaf1ff;
       border-radius: 999px;
-      padding: 6px 12px;
-      font-size: 12px;
-      font-weight: 700;
+      padding: 6px 14px;
+      font-size: 28px;
+      font-weight: 800;
       line-height: 1;
       cursor: pointer;
       user-select: none;
@@ -106,9 +100,7 @@
       box-shadow: 0 0 0 2px rgba(255,90,90,.18) inset;
     }
 
-    .calendar-wrap {
-      padding: 12px;
-    }
+    .calendar-wrap { padding: 12px; }
 
     #calendar {
       background: var(--panel2);
@@ -118,16 +110,13 @@
       min-height: 520px;
     }
 
-    /* FullCalendar compact theme */
-    .fc .fc-toolbar.fc-header-toolbar {
-      margin-bottom: 10px;
-    }
+    .fc .fc-toolbar.fc-header-toolbar { margin-bottom: 10px; }
 
     .fc .fc-toolbar-title {
       color: var(--text);
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: .2px;
+      font-size: 58px;
+      font-weight: 900;
+      letter-spacing: .15px;
     }
 
     .fc .fc-button {
@@ -136,10 +125,10 @@
       color: #eef5ff !important;
       border-radius: 10px !important;
       box-shadow: none !important;
-      font-weight: 700 !important;
+      font-weight: 800 !important;
       text-transform: lowercase !important;
-      font-size: 11px !important;
-      padding: 6px 10px !important;
+      font-size: 28px !important;
+      padding: 8px 16px !important;
     }
 
     .fc .fc-button:hover { background: #2a4a7d !important; }
@@ -153,45 +142,42 @@
 
     .fc .fc-col-header-cell-cushion {
       color: #c8d6f3;
-      font-size: 11px;
+      font-size: 28px;
       text-transform: uppercase;
       letter-spacing: .3px;
-      font-weight: 700;
+      font-weight: 800;
       padding: 8px 0;
     }
 
     .fc .fc-daygrid-day-number {
       color: #9fc0f7;
-      font-size: 13px;
-      font-weight: 700;
-      padding: 5px 7px;
+      font-size: 34px;
+      font-weight: 800;
+      padding: 6px 8px;
     }
 
     .fc .fc-daygrid-event {
       border-radius: 8px;
       border-width: 1px;
-      font-size: 11px;
+      font-size: 16px;
       padding: 1px 4px;
     }
 
     .fc .fc-event-title,
     .fc .fc-event-time {
       color: #eaf1ff;
-      font-weight: 600;
+      font-weight: 700;
     }
 
-    /* right panel */
-    #highlightsPanel .panel-header {
-      padding: 12px 14px;
-    }
+    #highlightsPanel .panel-header { padding: 12px 14px; }
 
     #monthTitle {
       margin: 0;
       color: var(--text);
-      font-size: 20px;
-      line-height: 1.25;
-      font-weight: 800;
-      letter-spacing: .2px;
+      font-size: 52px;
+      line-height: 1.12;
+      font-weight: 900;
+      letter-spacing: .15px;
     }
 
     #highlights {
@@ -207,17 +193,17 @@
     .card {
       background: #1a2e57;
       border: 1px solid #33558d;
-      border-left: 5px solid var(--accent);
+      border-left: 6px solid var(--accent);
       border-radius: 13px;
-      padding: 10px 11px;
+      padding: 11px 12px;
     }
 
     .card .title {
       margin: 0 0 8px;
       color: #f2f7ff;
-      font-size: 17px;
-      line-height: 1.25;
-      font-weight: 800;
+      font-size: 28px;
+      line-height: 1.2;
+      font-weight: 900;
       letter-spacing: .1px;
     }
 
@@ -235,9 +221,9 @@
       gap: 6px;
       white-space: nowrap;
       border-radius: 999px;
-      font-size: 12px;
+      font-size: 16px;
       line-height: 1;
-      padding: 6px 10px;
+      padding: 8px 12px;
     }
 
     .pill {
@@ -253,21 +239,24 @@
     }
 
     @media (max-width: 1080px) {
-      .page {
-        grid-template-columns: 1fr;
-      }
-      #highlights {
-        max-height: none;
-      }
+      .page { grid-template-columns: 1fr; }
+      #highlights { max-height: none; }
+
+      .panel-title { font-size: 32px; }
+      .sport-tab { font-size: 16px; padding: 6px 12px; }
+      .fc .fc-toolbar-title { font-size: 32px; }
+      .fc .fc-col-header-cell-cushion { font-size: 14px; }
+      .fc .fc-daygrid-day-number { font-size: 18px; }
+      #monthTitle { font-size: 30px; }
+      .card .title { font-size: 20px; }
     }
   </style>
 </head>
 <body>
   <main class="page">
-    <!-- LEFT: calendar -->
     <section class="panel">
       <header class="panel-header">
-        <h1 id="appTitle" class="panel-title">Sports Event Calendar</h1>
+        <h1 id="appTitle" class="panel-title">F1 Event Calendar</h1>
       </header>
 
       <div class="sport-tabs-wrap">
@@ -279,7 +268,6 @@
       </div>
     </section>
 
-    <!-- RIGHT: highlights -->
     <aside id="highlightsPanel" class="panel">
       <header class="panel-header">
         <h2 id="monthTitle">Monthly highlights</h2>
@@ -289,6 +277,6 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-  <script src="./app.js?v=20260215-9"></script>
+  <script src="./app.js?v=20260216-1"></script>
 </body>
 </html>

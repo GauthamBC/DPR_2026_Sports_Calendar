@@ -182,7 +182,8 @@ function canonicalGpNameFromLocation(location, title){
 }
 
 function buildF1Groups(events){
-  const map = new Map();
+  // 1) collect normalized F1 rows first
+  const rows = [];
 
   for (const e of events) {
     if (normalizeKey(e.sport) !== "f1") continue;
@@ -191,40 +192,77 @@ function buildF1Groups(events){
     const gpName = canonicalGpNameFromLocation(e.location, e.title);
     if (!gpName) continue;
 
-    // group by GP name only (not month) to avoid weekend splits
-    const key = normalizeKey(gpName);
-    const day = startOfDay(toDate(e.start));
+    const day = startOfDay(new Date(e.start));
+    if (isNaN(day)) continue;
 
-    const g = map.get(key) || {
+    rows.push({
+      ...e,
+      _gpName: gpName,
+      _gpKey: normalizeKey(gpName),
+      _day: day,
+      _kind: getSessionKind(e.title)
+    });
+  }
+
+  // 2) sort by gp name then date
+  rows.sort((a, b) => {
+    if (a._gpKey < b._gpKey) return -1;
+    if (a._gpKey > b._gpKey) return 1;
+    return a._day - b._day;
+  });
+
+  // 3) split into temporal clusters per gp key (gap > 10 days => new weekend group)
+  const GAP_DAYS = 10;
+  const groups = [];
+  let current = null;
+
+  function startGroup(r){
+    return {
       sport: "F1",
-      title: gpName,
+      title: r._gpName,
+      gpKey: r._gpKey,
       items: [],
-      start: day,
-      end: day,
+      start: r._day,
+      end: r._day,
       _hasRace: false,
       _hasQuali: false,
       _hasSprint: false,
       _dedupe: new Set()
     };
-
-    const kind = getSessionKind(e.title);
-    const dedupeKey = `${day.toISOString().slice(0,10)}||${kind}||${normalizeKey(e.title)}`;
-    if (!g._dedupe.has(dedupeKey)) {
-      g._dedupe.add(dedupeKey);
-      g.items.push(e);
-      if (day < g.start) g.start = day;
-      if (day > g.end) g.end = day;
-    }
-
-    if (kind === "race") g._hasRace = true;
-    if (kind === "qualifying" || kind === "sprint qualifying") g._hasQuali = true;
-    if (kind.includes("sprint")) g._hasSprint = true;
-
-    map.set(key, g);
   }
 
-  // month anchoring by race date (or earliest date if no race)
-  const groups = Array.from(map.values()).map(g => {
+  for (const r of rows) {
+    if (!current) {
+      current = startGroup(r);
+    } else {
+      const lastItem = current.items[current.items.length - 1];
+      const sameGp = current.gpKey === r._gpKey;
+      const gapMs = r._day - startOfDay(new Date(lastItem.start));
+      const gapDays = gapMs / (1000 * 60 * 60 * 24);
+
+      if (!sameGp || gapDays > GAP_DAYS) {
+        groups.push(current);
+        current = startGroup(r);
+      }
+    }
+
+    const dedupeKey = `${r._day.toISOString().slice(0,10)}||${r._kind}||${normalizeKey(r.title)}`;
+    if (!current._dedupe.has(dedupeKey)) {
+      current._dedupe.add(dedupeKey);
+      current.items.push(r);
+
+      if (r._day < current.start) current.start = r._day;
+      if (r._day > current.end) current.end = r._day;
+
+      if (r._kind === "race") current._hasRace = true;
+      if (r._kind === "qualifying" || r._kind === "sprint qualifying") current._hasQuali = true;
+      if (r._kind.includes("sprint")) current._hasSprint = true;
+    }
+  }
+  if (current) groups.push(current);
+
+  // 4) anchor month by race date (or earliest date if no race)
+  const finalized = groups.map(g => {
     const raceDates = g.items
       .filter(x => getSessionKind(x.title) === "race")
       .map(x => startOfDay(new Date(x.start)))
@@ -234,15 +272,13 @@ function buildF1Groups(events){
     g.anchorDate = anchor;
     g.primaryMonth = `${anchor.getFullYear()}-${anchor.getMonth()}`;
     delete g._dedupe;
+    delete g.gpKey;
     return g;
   });
 
-  groups.sort((a,b) => {
-    if (a._hasRace !== b._hasRace) return a._hasRace ? -1 : 1;
-    return a.anchorDate - b.anchorDate;
-  });
-
-  return groups;
+  // 5) sort timeline
+  finalized.sort((a,b) => a.anchorDate - b.anchorDate);
+  return finalized;
 }
 
 // ---------- render ----------

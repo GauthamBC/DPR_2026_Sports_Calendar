@@ -1,25 +1,117 @@
-const HIGHLIGHTS = document.getElementById("highlights");
-const MONTH_TITLE = document.getElementById("monthTitle");
-
-/**
- * Google Sheet published URL you shared:
- * https://docs.google.com/spreadsheets/d/e/2PACX-1vSTuRExRSKpKiorPUADig1yYm5_ye3jLG-5TcQ4Uhz07qgx-1mIkkhtEsFky9FpRd0QczIl2xEBYEd8/pubhtml
- */
+/* =========================
+   CONFIG
+   ========================= */
 const SHEET_PUBHTML_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vSTuRExRSKpKiorPUADig1yYm5_ye3jLG-5TcQ4Uhz07qgx-1mIkkhtEsFky9FpRd0QczIl2xEBYEd8/pubhtml";
 
 /**
- * IMPORTANT: set this to your F1_race tab gid.
- * Example: const F1_RACE_GID = "123456789";
- * If left null, Google may return the default published tab.
+ * One entry per sport tab in your published Google Sheet.
+ * - key: internal sport key
+ * - label: button label
+ * - gid: tab gid from Google Sheet
+ * - columns: aliases for required fields (title/start/end/location)
+ *
+ * Put all likely header variants in each alias array.
  */
-const F1_RACE_GID = null;
+const SPORT_SHEETS = [
+  {
+    key: "f1",
+    label: "F1",
+    gid: "REPLACE_WITH_F1_RACE_GID",
+    columns: {
+      title: ["title", "event", "race", "name"],
+      start: ["start", "start_date", "date", "start time", "start_datetime"],
+      end: ["end", "end_date", "end time", "end_datetime", "finish"],
+      location: ["location", "venue", "country", "city"]
+    }
+  },
+  {
+    key: "nascar",
+    label: "NASCAR",
+    gid: "REPLACE_WITH_NASCAR_GID",
+    columns: {
+      title: ["title", "event", "race", "matchup", "name"],
+      start: ["start", "date", "kickoff", "start_date", "start_datetime"],
+      end: ["end", "end_date", "end_datetime"],
+      location: ["location", "venue", "track", "city"]
+    }
+  },
+  {
+    key: "nfl",
+    label: "NFL",
+    gid: "REPLACE_WITH_NFL_GID",
+    columns: {
+      title: ["title", "event", "game", "matchup", "name"],
+      start: ["start", "date", "kickoff", "start_date", "datetime"],
+      end: ["end", "end_date", "end_datetime"],
+      location: ["location", "venue", "stadium", "city"]
+    }
+  },
+  {
+    key: "nhl",
+    label: "NHL",
+    gid: "REPLACE_WITH_NHL_GID",
+    columns: {
+      title: ["title", "event", "game", "matchup", "name"],
+      start: ["start", "date", "puck drop", "start_date", "datetime"],
+      end: ["end", "end_date", "end_datetime"],
+      location: ["location", "venue", "arena", "city"]
+    }
+  },
+  {
+    key: "nba",
+    label: "NBA",
+    gid: "REPLACE_WITH_NBA_GID",
+    columns: {
+      title: ["title", "event", "game", "matchup", "name"],
+      start: ["start", "date", "tipoff", "start_date", "datetime"],
+      end: ["end", "end_date", "end_datetime"],
+      location: ["location", "venue", "arena", "city"]
+    }
+  },
+  {
+    key: "mlb",
+    label: "MLB",
+    gid: "REPLACE_WITH_MLB_GID",
+    columns: {
+      title: ["title", "event", "game", "matchup", "name"],
+      start: ["start", "date", "first pitch", "start_date", "datetime"],
+      end: ["end", "end_date", "end_datetime"],
+      location: ["location", "venue", "ballpark", "city"]
+    }
+  }
+];
 
+const SPORT_ORDER = ["f1", "nascar", "nfl", "nhl", "nba", "mlb", "other"];
+const SPORT_LABELS = {
+  f1: "F1",
+  nascar: "NASCAR",
+  nfl: "NFL",
+  nhl: "NHL",
+  nba: "NBA",
+  mlb: "MLB",
+  other: "Other"
+};
+
+/* =========================
+   DOM
+   ========================= */
+const HIGHLIGHTS = document.getElementById("highlights");
+const MONTH_TITLE = document.getElementById("monthTitle");
+const APP_TITLE = document.getElementById("appTitle");
+const SPORT_TABS = document.getElementById("sportTabs");
+
+/* =========================
+   STATE
+   ========================= */
 let allEvents = [];
+let groupedBySport = {};
+let selectedSport = "f1";
 let calendar = null;
-let f1Groups = [];
 
-/* -------------------- utils -------------------- */
+/* =========================
+   HELPERS
+   ========================= */
 function normalizeKey(s) {
   return (s || "")
     .normalize("NFD")
@@ -29,62 +121,93 @@ function normalizeKey(s) {
     .trim();
 }
 
+function cleanHeader(s) {
+  return normalizeKey(String(s || "").replace(/[_-]+/g, " "));
+}
+
+function monthKeyFromDate(d) {
+  return `${d.getFullYear()}-${d.getMonth()}`;
+}
+
 function startOfDay(input) {
   const d = new Date(input);
   d.setHours(0, 0, 0, 0);
   return d;
 }
 
-function monthKeyFromDate(d) {
-  return `${d.getFullYear()}-${d.getMonth()}`; // 0-based month
+function prettySport(k) {
+  return SPORT_LABELS[k] || "Other";
 }
 
-function titleCase(s) {
-  return (s || "")
-    .split(" ")
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(" ");
+function iconForSport(k) {
+  return {
+    f1: "🏎️",
+    nascar: "🏁",
+    nfl: "🏈",
+    nhl: "🏒",
+    nba: "🏀",
+    mlb: "⚾",
+    other: "🎯"
+  }[k] || "🎯";
 }
 
 function formatRange(start, end) {
   const s = new Date(start);
-  const e = new Date(end);
+  const e = end ? new Date(end) : new Date(start);
 
   const sameDay = s.toDateString() === e.toDateString();
-  const sameMonthYear =
-    s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear();
+  const sameMonthYear = s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear();
 
-  const monthDay = { month: "short", day: "numeric" };
-  const yearOnly = { year: "numeric" };
-
-  const sTxt = s.toLocaleDateString(undefined, monthDay);
-  const eTxt = e.toLocaleDateString(undefined, monthDay);
-  const yTxt = s.toLocaleDateString(undefined, yearOnly);
+  const sTxt = s.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const eTxt = e.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const yTxt = s.toLocaleDateString(undefined, { year: "numeric" });
 
   if (sameDay) return `${sTxt}, ${yTxt}`;
   if (sameMonthYear) return `${sTxt}–${e.getDate()}, ${yTxt}`;
   return `${sTxt} – ${eTxt}, ${yTxt}`;
 }
 
-/* -------------------- google sheets url -------------------- */
-function buildCsvUrlFromPubhtml(pubhtmlUrl, gid = null) {
-  // convert /pubhtml => /pub
+function parseDateFlexible(v) {
+  if (!v) return null;
+  const raw = String(v).trim();
+  if (!raw) return null;
+
+  // native parse first (handles ISO)
+  const d1 = new Date(raw);
+  if (!Number.isNaN(d1.getTime())) return d1;
+
+  // try dd/mm/yyyy or mm/dd/yyyy-ish heuristics
+  // keep simple and safe
+  const m = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?$/);
+  if (m) {
+    let a = parseInt(m[1], 10);
+    let b = parseInt(m[2], 10);
+    let y = parseInt(m[3], 10);
+    if (y < 100) y += 2000;
+    const hh = m[4] ? parseInt(m[4], 10) : 0;
+    const mm = m[5] ? parseInt(m[5], 10) : 0;
+
+    // heuristic: if first > 12, it's day/month
+    let month = a, day = b;
+    if (a > 12) { day = a; month = b; }
+
+    const d2 = new Date(y, month - 1, day, hh, mm);
+    if (!Number.isNaN(d2.getTime())) return d2;
+  }
+
+  return null;
+}
+
+function buildCsvUrlFromPubhtml(pubhtmlUrl, gid) {
   const base = pubhtmlUrl.replace(/\/pubhtml(\?.*)?$/i, "/pub");
   const u = new URL(base);
-
   u.searchParams.set("output", "csv");
   u.searchParams.set("single", "true");
-  if (gid !== null && gid !== undefined && String(gid).trim() !== "") {
-    u.searchParams.set("gid", String(gid).trim());
-  }
-  // cache-bust
+  u.searchParams.set("gid", String(gid));
   u.searchParams.set("t", Date.now().toString());
-
   return u.toString();
 }
 
-/* -------------------- csv parser -------------------- */
 function parseCSV(text) {
   const rows = [];
   let row = [];
@@ -94,7 +217,6 @@ function parseCSV(text) {
 
   while (i < text.length) {
     const ch = text[i];
-
     if (inQuotes) {
       if (ch === '"') {
         if (text[i + 1] === '"') {
@@ -103,70 +225,51 @@ function parseCSV(text) {
           continue;
         }
         inQuotes = false;
-        i += 1;
+        i++;
         continue;
       }
       field += ch;
-      i += 1;
+      i++;
       continue;
     }
-
-    if (ch === '"') {
-      inQuotes = true;
-      i += 1;
-      continue;
-    }
-    if (ch === ",") {
-      row.push(field);
-      field = "";
-      i += 1;
-      continue;
-    }
-    if (ch === "\n") {
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = "";
-      i += 1;
-      continue;
-    }
-    if (ch === "\r") {
-      i += 1;
-      continue;
-    }
-
+    if (ch === '"') { inQuotes = true; i++; continue; }
+    if (ch === ",") { row.push(field); field = ""; i++; continue; }
+    if (ch === "\n") { row.push(field); rows.push(row); row = []; field = ""; i++; continue; }
+    if (ch === "\r") { i++; continue; }
     field += ch;
-    i += 1;
+    i++;
   }
-
-  if (field.length > 0 || row.length > 0) {
-    row.push(field);
-    rows.push(row);
-  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
 
   if (!rows.length) return [];
+  const headers = rows[0].map((h) => String(h || "").trim());
 
-  const headers = rows[0].map((h) => h.trim());
-
-  return rows
-    .slice(1)
+  return rows.slice(1)
     .filter((r) => r.some((x) => String(x ?? "").trim() !== ""))
     .map((r) => {
       const obj = {};
-      headers.forEach((h, idx) => {
-        obj[h] = (r[idx] ?? "").trim();
-      });
+      headers.forEach((h, idx) => obj[h] = (r[idx] ?? "").trim());
       return obj;
     });
 }
 
-/* -------------------- F1 session / naming -------------------- */
+function findColumnKey(record, aliases) {
+  const keys = Object.keys(record || {});
+  const cleaned = keys.map((k) => cleanHeader(k));
+  for (const alias of aliases || []) {
+    const a = cleanHeader(alias);
+    const idx = cleaned.indexOf(a);
+    if (idx >= 0) return keys[idx];
+  }
+  return null;
+}
+
+/* =========================
+   F1 grouping
+   ========================= */
 function getSessionKind(title) {
   const t = normalizeKey(title);
-
-  if (t.includes("sprint qualification") || t.includes("sprint qualifying")) {
-    return "sprint qualifying";
-  }
+  if (t.includes("sprint qualification") || t.includes("sprint qualifying")) return "sprint qualifying";
   if (t.includes("sprint race")) return "sprint race";
   if (t.includes("sprint")) return "sprint";
   if (t.includes("qualifying")) return "qualifying";
@@ -175,35 +278,38 @@ function getSessionKind(title) {
   return "other";
 }
 
-function canonicalGpNameFromLocation(location, title) {
+function canonicalF1Name(location, title) {
   const loc = normalizeKey(location);
   const t = normalizeKey(title);
 
-  if (!t) return null;
   if (t.includes("in your calendar")) return null;
   if (t.includes("testing")) return "Testing";
 
-  // location-first mapping
-  if (loc.includes("australia")) return "Australian Grand Prix";
-  if (loc.includes("china")) return "Chinese Grand Prix";
-  if (loc.includes("japan")) return "Japanese Grand Prix";
-  if (loc.includes("bahrain")) return "Bahrain Grand Prix";
-  if (loc.includes("saudi")) return "Saudi Arabian Grand Prix";
-  if (loc.includes("canada")) return "Canadian Grand Prix";
-  if (loc.includes("monaco")) return "Monaco Grand Prix";
-  if (loc.includes("spain")) return "Spanish Grand Prix";
-  if (loc.includes("austria")) return "Austrian Grand Prix";
-  if (loc.includes("united kingdom")) return "British Grand Prix";
-  if (loc.includes("belgium")) return "Belgian Grand Prix";
-  if (loc.includes("hungary")) return "Hungarian Grand Prix";
-  if (loc.includes("netherlands")) return "Dutch Grand Prix";
-  if (loc.includes("italy")) return "Italian Grand Prix";
-  if (loc.includes("azerbaijan")) return "Azerbaijan Grand Prix";
-  if (loc.includes("singapore")) return "Singapore Grand Prix";
-  if (loc.includes("mexico")) return "Mexico City Grand Prix";
-  if (loc.includes("brazil")) return "São Paulo Grand Prix";
-  if (loc.includes("qatar")) return "Qatar Grand Prix";
-  if (loc.includes("united arab emirates")) return "Abu Dhabi Grand Prix";
+  const map = [
+    ["australia", "Australian Grand Prix"],
+    ["china", "Chinese Grand Prix"],
+    ["japan", "Japanese Grand Prix"],
+    ["bahrain", "Bahrain Grand Prix"],
+    ["saudi", "Saudi Arabian Grand Prix"],
+    ["canada", "Canadian Grand Prix"],
+    ["monaco", "Monaco Grand Prix"],
+    ["spain", "Spanish Grand Prix"],
+    ["austria", "Austrian Grand Prix"],
+    ["united kingdom", "British Grand Prix"],
+    ["belgium", "Belgian Grand Prix"],
+    ["hungary", "Hungarian Grand Prix"],
+    ["netherlands", "Dutch Grand Prix"],
+    ["italy", "Italian Grand Prix"],
+    ["azerbaijan", "Azerbaijan Grand Prix"],
+    ["singapore", "Singapore Grand Prix"],
+    ["mexico", "Mexico City Grand Prix"],
+    ["brazil", "São Paulo Grand Prix"],
+    ["qatar", "Qatar Grand Prix"],
+    ["united arab emirates", "Abu Dhabi Grand Prix"]
+  ];
+  for (const [needle, out] of map) {
+    if (loc.includes(needle)) return out;
+  }
 
   if (loc.includes("united states")) {
     if (t.includes("miami")) return "Miami Grand Prix";
@@ -211,209 +317,351 @@ function canonicalGpNameFromLocation(location, title) {
     return "United States Grand Prix";
   }
 
-  // title fallback
-  if (t.includes("monaco")) return "Monaco Grand Prix";
-  if (t.includes("italia") || t.includes("italian") || t.includes("monza")) {
-    return "Italian Grand Prix";
-  }
-  if (t.includes("espana") || t.includes("españa") || t.includes("barcelona") || t.includes("spanish")) {
-    return "Spanish Grand Prix";
-  }
-  if (t.includes("azerbaijan") || t.includes("baku")) return "Azerbaijan Grand Prix";
-  if (t.includes("qatar")) return "Qatar Grand Prix";
-
-  // generic fallback: extract "... Grand Prix"
   if (t.includes("grand prix")) {
     const cleaned = (title || "").replace(/[🏎🏁⏱️]/g, "").trim();
     const m = cleaned.match(/([A-Za-zÀ-ÿ'’\-\s]+)\s+grand\s+prix/i);
-    if (m && m[1]) return `${titleCase(m[1].trim())} Grand Prix`;
+    if (m?.[1]) return `${m[1].trim()} Grand Prix`;
   }
-
-  return null;
+  return title || "F1 Event";
 }
 
-/* -------------------- grouping (fixed for repeated GP names) -------------------- */
-function buildF1Groups(events) {
-  const rows = [];
+function genericSeriesName(e) {
+  const t = (e.title || "").replace(/[🏎🏁⏱️🏈🏒🏀⚾]/g, "").trim();
+  return t || `${prettySport(e.sportKey)} Event`;
+}
 
-  for (const e of events) {
-    if (normalizeKey(e.sport) !== "f1") continue;
-    if (/in your calendar/i.test(e.title || "")) continue;
+function buildGroupedHighlights(events) {
+  const bySport = {};
+  for (const k of SPORT_ORDER) bySport[k] = [];
 
-    const gpName = canonicalGpNameFromLocation(e.location, e.title);
-    if (!gpName) continue;
-
-    const day = startOfDay(e.start);
-    if (Number.isNaN(day.getTime())) continue;
-
-    rows.push({
+  // F1 grouped by canonical race weekend
+  const f1Rows = events
+    .filter((e) => e.sportKey === "f1")
+    .map((e) => ({
       ...e,
-      _gpName: gpName,
-      _gpKey: normalizeKey(gpName),
-      _day: day,
+      _name: canonicalF1Name(e.location, e.title),
+      _key: normalizeKey(canonicalF1Name(e.location, e.title)),
+      _day: startOfDay(e.start),
       _kind: getSessionKind(e.title)
-    });
-  }
+    }))
+    .filter((x) => x._name && !Number.isNaN(x._day.getTime()))
+    .sort((a, b) => (a._key < b._key ? -1 : a._key > b._key ? 1 : a._day - b._day));
 
-  // sort by GP key then date
-  rows.sort((a, b) => {
-    if (a._gpKey < b._gpKey) return -1;
-    if (a._gpKey > b._gpKey) return 1;
-    return a._day - b._day;
+  const GAP_DAYS = 10;
+  const f1Groups = [];
+  let g = null;
+
+  const newGroup = (r) => ({
+    sportKey: "f1",
+    title: r._name,
+    start: r._day,
+    end: r._day,
+    items: [],
+    _key: r._key,
+    _hasRace: false,
+    _hasQuali: false,
+    _hasSprint: false,
+    _dedupe: new Set()
   });
 
-  // split repeated GP names into separate race-weekend clusters
-  const GAP_DAYS = 10;
-  const groups = [];
-  let current = null;
-
-  function newGroup(r) {
-    return {
-      sport: "F1",
-      title: r._gpName,
-      gpKey: r._gpKey,
-      items: [],
-      start: r._day,
-      end: r._day,
-      _hasRace: false,
-      _hasQuali: false,
-      _hasSprint: false,
-      _dedupe: new Set()
-    };
-  }
-
-  for (const r of rows) {
-    if (!current) {
-      current = newGroup(r);
-    } else {
-      const last = current.items[current.items.length - 1];
-      const sameGp = current.gpKey === r._gpKey;
-      const lastDay = startOfDay(last.start);
-      const gapDays = (r._day - lastDay) / (1000 * 60 * 60 * 24);
-
-      if (!sameGp || gapDays > GAP_DAYS) {
-        groups.push(current);
-        current = newGroup(r);
+  for (const r of f1Rows) {
+    if (!g) g = newGroup(r);
+    else {
+      const last = g.items[g.items.length - 1];
+      const gap = (r._day - startOfDay(last.start)) / 86400000;
+      if (g._key !== r._key || gap > GAP_DAYS) {
+        f1Groups.push(g);
+        g = newGroup(r);
       }
     }
 
-    // dedupe per day/session/title
-    const dedupeKey = `${r._day.toISOString().slice(0, 10)}|${r._kind}|${normalizeKey(r.title)}`;
-    if (current._dedupe.has(dedupeKey)) continue;
-    current._dedupe.add(dedupeKey);
+    const dedupe = `${r._day.toISOString().slice(0,10)}|${r._kind}|${normalizeKey(r.title)}`;
+    if (g._dedupe.has(dedupe)) continue;
+    g._dedupe.add(dedupe);
 
-    current.items.push(r);
-    if (r._day < current.start) current.start = r._day;
-    if (r._day > current.end) current.end = r._day;
+    g.items.push(r);
+    if (r._day < g.start) g.start = r._day;
+    if (r._day > g.end) g.end = r._day;
+    if (r._kind === "race") g._hasRace = true;
+    if (r._kind === "qualifying" || r._kind === "sprint qualifying") g._hasQuali = true;
+    if (r._kind.includes("sprint")) g._hasSprint = true;
+  }
+  if (g) f1Groups.push(g);
 
-    if (r._kind === "race") current._hasRace = true;
-    if (r._kind === "qualifying" || r._kind === "sprint qualifying") current._hasQuali = true;
-    if (r._kind.includes("sprint")) current._hasSprint = true;
+  bySport.f1 = f1Groups.map((x) => {
+    const raceDates = x.items
+      .filter((i) => getSessionKind(i.title) === "race")
+      .map((i) => startOfDay(i.start))
+      .sort((a, b) => a - b);
+    const anchor = raceDates.length ? raceDates[0] : x.start;
+    return {
+      sportKey: "f1",
+      title: x.title,
+      start: x.start,
+      end: x.end,
+      anchorDate: anchor,
+      primaryMonth: monthKeyFromDate(anchor),
+      flags: [x._hasRace ? "Race" : null, x._hasQuali ? "Quali" : null, x._hasSprint ? "Sprint" : null].filter(Boolean)
+    };
+  }).sort((a, b) => a.anchorDate - b.anchorDate);
+
+  // Others grouped by title + time proximity
+  const others = events.filter((e) => e.sportKey !== "f1");
+  const map = {};
+  for (const e of others) {
+    if (!map[e.sportKey]) map[e.sportKey] = [];
+    map[e.sportKey].push({
+      ...e,
+      _name: genericSeriesName(e),
+      _key: normalizeKey(genericSeriesName(e)),
+      _day: startOfDay(e.start)
+    });
   }
 
-  if (current) groups.push(current);
+  for (const [sport, arr] of Object.entries(map)) {
+    arr.sort((a, b) => (a._key < b._key ? -1 : a._key > b._key ? 1 : a._day - b._day));
+    const groups = [];
+    let cg = null;
 
-  // month anchor = race date (if exists), else earliest group date
-  const finalized = groups.map((g) => {
-    const raceDates = g.items
-      .filter((x) => getSessionKind(x.title) === "race")
-      .map((x) => startOfDay(x.start))
-      .filter((d) => !Number.isNaN(d.getTime()))
-      .sort((a, b) => a - b);
+    for (const r of arr) {
+      if (!cg) cg = { sportKey: sport, title: r._name, start: r._day, end: r._day, items: [r], _key: r._key };
+      else {
+        const last = cg.items[cg.items.length - 1];
+        const gap = (r._day - startOfDay(last.start)) / 86400000;
+        if (cg._key !== r._key || gap > 14) {
+          groups.push(cg);
+          cg = { sportKey: sport, title: r._name, start: r._day, end: r._day, items: [r], _key: r._key };
+        } else {
+          cg.items.push(r);
+          if (r._day < cg.start) cg.start = r._day;
+          if (r._day > cg.end) cg.end = r._day;
+        }
+      }
+    }
+    if (cg) groups.push(cg);
 
-    const anchor = raceDates.length ? raceDates[0] : g.start;
-    g.anchorDate = anchor;
-    g.primaryMonth = monthKeyFromDate(anchor);
+    bySport[sport] = groups.map((x) => ({
+      sportKey: sport,
+      title: x.title,
+      start: x.start,
+      end: x.end,
+      anchorDate: x.start,
+      primaryMonth: monthKeyFromDate(x.start),
+      flags: []
+    })).sort((a, b) => a.anchorDate - b.anchorDate);
+  }
 
-    delete g._dedupe;
-    delete g.gpKey;
-    return g;
-  });
-
-  // chronological order
-  finalized.sort((a, b) => a.anchorDate - b.anchorDate);
-  return finalized;
+  return bySport;
 }
 
-/* -------------------- rendering -------------------- */
+/* =========================
+   DATA LOADING (multi-tab)
+   ========================= */
+async function fetchSportSheet(cfg) {
+  const out = [];
+  if (!cfg?.gid || String(cfg.gid).includes("REPLACE_WITH_")) return out;
+
+  const url = buildCsvUrlFromPubhtml(SHEET_PUBHTML_URL, cfg.gid);
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`${cfg.label}: CSV fetch failed (${res.status})`);
+
+  const rows = parseCSV(await res.text());
+  if (!rows.length) return out;
+
+  // detect actual header keys from aliases using first row
+  const sample = rows[0];
+  const titleKey = findColumnKey(sample, cfg.columns.title);
+  const startKey = findColumnKey(sample, cfg.columns.start);
+  const endKey = findColumnKey(sample, cfg.columns.end);
+  const locationKey = findColumnKey(sample, cfg.columns.location);
+
+  if (!titleKey || !startKey) {
+    console.warn(`${cfg.label}: missing required columns (title/start).`);
+    return out;
+  }
+
+  for (const r of rows) {
+    const title = String(r[titleKey] || "").trim();
+    const startRaw = String(r[startKey] || "").trim();
+    const endRaw = endKey ? String(r[endKey] || "").trim() : "";
+    const location = locationKey ? String(r[locationKey] || "").trim() : "";
+
+    if (!title || !startRaw) continue;
+
+    const sDate = parseDateFlexible(startRaw);
+    if (!sDate) continue;
+    const eDate = endRaw ? parseDateFlexible(endRaw) : null;
+
+    out.push({
+      title,
+      start: sDate.toISOString(),
+      end: eDate ? eDate.toISOString() : "",
+      location,
+      sport: cfg.label,
+      sportKey: cfg.key,
+      source: "Google Sheet"
+    });
+  }
+
+  return out;
+}
+
+async function loadAllSports() {
+  const batches = await Promise.all(
+    SPORT_SHEETS.map(async (cfg) => {
+      try {
+        return await fetchSportSheet(cfg);
+      } catch (err) {
+        console.error(`${cfg.label} load error:`, err);
+        return [];
+      }
+    })
+  );
+
+  const merged = batches.flat();
+
+  // anything unknown goes to "other" only if you add custom loaders later
+  return merged;
+}
+
+/* =========================
+   UI RENDER
+   ========================= */
+function buildSportTabs() {
+  SPORT_TABS.innerHTML = "";
+  const available = SPORT_ORDER.filter((k) => (groupedBySport[k] || []).length > 0);
+
+  // always show all core tabs you requested
+  const tabsToShow = ["f1", "nascar", "nfl", "nhl", "nba", "mlb", "other"];
+
+  for (const key of tabsToShow) {
+    const btn = document.createElement("button");
+    btn.className = "sport-tab" + (key === selectedSport ? " active" : "");
+    btn.type = "button";
+
+    const count = (groupedBySport[key] || []).length;
+    btn.textContent = count > 0 ? `${prettySport(key)}` : `${prettySport(key)}`;
+
+    btn.addEventListener("click", () => {
+      selectedSport = key;
+      APP_TITLE.textContent = `${prettySport(key)} Event Calendar`;
+      [...SPORT_TABS.children].forEach((x) => x.classList.remove("active"));
+      btn.classList.add("active");
+      rerenderCalendar();
+    });
+
+    SPORT_TABS.appendChild(btn);
+  }
+
+  // If selected sport has no data, auto-fallback to first available
+  if (!(groupedBySport[selectedSport] || []).length) {
+    const first = available[0] || "f1";
+    selectedSport = first;
+    APP_TITLE.textContent = `${prettySport(first)} Event Calendar`;
+    [...SPORT_TABS.children].forEach((x) => {
+      if (normalizeKey(x.textContent) === normalizeKey(prettySport(first))) x.classList.add("active");
+      else x.classList.remove("active");
+    });
+  }
+}
+
 function renderHighlights(currentMonthStart) {
   HIGHLIGHTS.innerHTML = "";
-
-  const monthLabel = currentMonthStart.toLocaleDateString(undefined, {
-    month: "long",
-    year: "numeric"
-  });
-  MONTH_TITLE.textContent = `Monthly highlights — ${monthLabel}`;
+  const label = currentMonthStart.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  MONTH_TITLE.textContent = `Monthly highlights — ${label}`;
 
   const mk = monthKeyFromDate(currentMonthStart);
-
-  const groups = f1Groups
-    .filter((g) => g.primaryMonth === mk)
-    .slice(0, 12);
+  const groups = (groupedBySport[selectedSport] || []).filter((g) => g.primaryMonth === mk);
 
   if (!groups.length) {
-    HIGHLIGHTS.innerHTML = `
-      <div class="card">
-        <div class="title">No highlights found</div>
-        <div class="meta"><span class="pill">Try another month.</span></div>
-      </div>
-    `;
+    HIGHLIGHTS.innerHTML = `<div class="card"><div class="title">No highlights found</div></div>`;
     return;
   }
 
   for (const g of groups) {
-    const flags = [];
-    if (g._hasRace) flags.push("Race");
-    if (g._hasQuali) flags.push("Quali");
-    if (g._hasSprint) flags.push("Sprint");
-
-    const safeTitle = String(g.title || "").replace(/^[🏁🏎️⏱️\s]+/g, "");
-
     const card = document.createElement("div");
-    card.className = "card f1";
+    const icon = iconForSport(g.sportKey);
+    const flags = g.flags?.length ? ` • ${g.flags.join(" / ")}` : "";
+
+    card.className = "card";
     card.innerHTML = `
-      <div class="title">🏎️ ${safeTitle}</div>
+      <div class="title">${icon} ${g.title}</div>
       <div class="meta">
-        <span class="pill-date pill-f1">📅 ${formatRange(g.start, g.end)}</span>
-        <span class="pill">🔥 F1${flags.length ? ` • ${flags.join(" / ")}` : ""}</span>
+        <span class="pill-date">📅 ${formatRange(g.start, g.end)}</span>
+        <span class="pill">🔥 ${prettySport(g.sportKey)}${flags}</span>
       </div>
     `;
     HIGHLIGHTS.appendChild(card);
   }
 }
 
-/* -------------------- load + calendar -------------------- */
-async function loadEvents() {
+function getEventsForSelectedSport() {
+  return allEvents.filter((e) => e.sportKey === selectedSport);
+}
+
+function rerenderCalendar() {
+  if (!calendar) return;
+  calendar.removeAllEvents();
+  calendar.addEventSource(
+    getEventsForSelectedSport().map((e) => ({
+      title: e.title,
+      start: e.start,
+      end: e.end || null,
+      extendedProps: { sportKey: e.sportKey, location: e.location, source: e.source }
+    }))
+  );
+  renderHighlights(calendar.view.currentStart);
+}
+
+function initCalendar() {
+  const el = document.getElementById("calendar");
+  calendar = new FullCalendar.Calendar(el, {
+    initialView: "dayGridMonth",
+    height: "auto",
+    displayEventTime: false,
+    dayMaxEvents: true,
+    showNonCurrentDates: false,
+    fixedWeekCount: false,
+
+    events: getEventsForSelectedSport().map((e) => ({
+      title: e.title,
+      start: e.start,
+      end: e.end || null,
+      extendedProps: { sportKey: e.sportKey, location: e.location, source: e.source }
+    })),
+
+    datesSet(info) {
+      renderHighlights(info.view.currentStart);
+    },
+
+    eventDidMount(info) {
+      const s = info.event.extendedProps?.sportKey;
+      const border = {
+        f1: "#e10600",
+        nascar: "#ffd54a",
+        nfl: "#44c0ff",
+        nhl: "#8ee08e",
+        nba: "#ff9a5a",
+        mlb: "#c6a6ff",
+        other: "#7aa2ff"
+      }[s] || "#7aa2ff";
+      info.el.style.borderColor = border;
+    }
+  });
+
+  calendar.render();
+}
+
+/* =========================
+   BOOT
+   ========================= */
+(async function boot() {
   try {
-    const csvUrl = buildCsvUrlFromPubhtml(SHEET_PUBHTML_URL, F1_RACE_GID);
-    const res = await fetch(csvUrl, { cache: "no-store" });
-    if (!res.ok) throw new Error(`CSV fetch failed (${res.status})`);
+    allEvents = await loadAllSports();
+    groupedBySport = buildGroupedHighlights(allEvents);
 
-    const csvText = await res.text();
-    const records = parseCSV(csvText);
-
-    allEvents = records
-      .map((r) => ({
-        title: r.title || "",
-        start: r.start || "",
-        end: r.end || "",
-        sport: r.sport || "",
-        source: r.source || "",
-        location: r.location || ""
-      }))
-      .filter((e) => e.title && e.start)
-      .filter((e) => normalizeKey(e.sport) === "f1");
-
-    f1Groups = buildF1Groups(allEvents);
-
-    // Optional debug: uncomment to inspect grouped highlights
-    // console.table(f1Groups.map(g => ({
-    //   title: g.title,
-    //   start: g.start.toISOString().slice(0,10),
-    //   end: g.end.toISOString().slice(0,10),
-    //   primaryMonth: g.primaryMonth
-    // })));
-
+    APP_TITLE.textContent = `${prettySport(selectedSport)} Event Calendar`;
+    buildSportTabs();
     initCalendar();
   } catch (err) {
     console.error(err);
@@ -424,48 +672,4 @@ async function loadEvents() {
       </div>
     `;
   }
-}
-
-function initCalendar() {
-  const el = document.getElementById("calendar");
-
-  if (!el) {
-    console.error('Missing #calendar container in index.html');
-    return;
-  }
-
-  calendar = new FullCalendar.Calendar(el, {
-    initialView: "dayGridMonth",
-    height: "auto",
-    displayEventTime: false,
-    dayMaxEvents: true,
-    showNonCurrentDates: false,
-    fixedWeekCount: false,
-
-    events: allEvents.map((e) => ({
-      title: e.title,
-      start: e.start,
-      end: e.end || null,
-      extendedProps: {
-        sport: e.sport,
-        source: e.source,
-        location: e.location
-      }
-    })),
-
-    datesSet(info) {
-      renderHighlights(info.view.currentStart);
-    },
-
-    eventDidMount(info) {
-      const sport = normalizeKey(info.event.extendedProps?.sport || "");
-      if (sport === "f1") {
-        info.el.style.borderColor = "#e10600";
-      }
-    }
-  });
-
-  calendar.render();
-}
-
-loadEvents();
+})();
